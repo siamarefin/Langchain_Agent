@@ -33,8 +33,11 @@ async def chat_endpoint(
             for page_num in range(pdf_document.page_count):
                 page = pdf_document[page_num]
                 full_text += page.get_text()
+            print(f"📄 Extracted PDF text:\n{full_text}")
         else:
             full_text = ""
+
+        # _console.log(full_text) 
 
 
         user_message = message.strip()
@@ -47,7 +50,7 @@ async def chat_endpoint(
 
         response = model.invoke(messages)
         response_text = response.text()
-        print(f"💬 gemini PDF chat: {response_text}")
+        # print(f"💬 gemini PDF chat: {response_text}")
         return {"response": response_text}
 
     except Exception as e:
