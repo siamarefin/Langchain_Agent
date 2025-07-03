@@ -1,17 +1,19 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
+from langchain.chat_models import init_chat_model
 
 router = APIRouter()
 
-# Configure Gemini API key
+# Load environment variables
 load_dotenv()
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
-# Load Gemini model
-model = genai.GenerativeModel("models/gemini-1.5-pro-latest")
+# Set up Gemini API key from .env
+os.environ["GOOGLE_API_KEY"] = os.getenv("GEMINI_API_KEY", "")
+
+# Set up Gemini chat model (no tools)
+model = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
 
 class ChatRequest(BaseModel):
     message: str
@@ -19,13 +21,11 @@ class ChatRequest(BaseModel):
 @router.post("/chat/")
 async def chat_endpoint(request: ChatRequest):
     try:
-        medicine_name = request.message.strip()
-        prompt = f"Tell me about this medicine: {medicine_name}"
-        response = model.generate_content(prompt)
-
-        response_text = response.text.strip()
+        user_message = request.message.strip()
+        prompt = f"Answer me my question : {user_message}"
+        response = model.invoke([{"role": "user", "content": prompt}])
+        response_text = response.text()
         print(f"💬 gemini: {response_text}")
-
         return {"response": response_text}
     except Exception as e:
         print(f"❌ Server error: {e}")

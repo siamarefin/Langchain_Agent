@@ -14,7 +14,6 @@ app.add_middleware(
 
 app.include_router(router)
 
-# Add a root endpoint for health check (optional)
 @app.get("/")
 def read_root():
     return {"status": "ok"}
