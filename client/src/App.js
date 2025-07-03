@@ -1,23 +1,47 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './App.css';
-import MedicineSearch from './components/MedicineSearch';
+
 
 function App() {
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [pdfFile, setPdfFile] = useState(null);
+  const [prompt, setPrompt] = useState('');
 
-  const handleSearch = async (query) => {
+  const handleFileChange = (e) => {
+    setPdfFile(e.target.files[0]);
+  };
+
+
+  const handlePromptChange = (e) => {
+    setPrompt(e.target.value);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!prompt.trim()) {
+      setError('Please enter a prompt.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setSummary('');
     try {
-      // Use Python FastAPI backend endpoint
-      const response = await fetch('http://localhost:8000/chat/', {
+      const formData = new FormData();
+      if (pdfFile){
+        formData.append('file', pdfFile);
+      }
+      
+      formData.append('message', prompt);
+
+      const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: `Give me detailed information about the medicine: ${query}` })
+        body: formData,
       });
+
       if (!response.ok) throw new Error('Failed to fetch results');
       const data = await response.json();
       setSummary(data.response || 'No information found.');
@@ -29,15 +53,41 @@ function App() {
   };
 
   return (
-    <div className="App" style={{ maxWidth: 700, margin: '0 auto', padding: 30 }}>
-      <h1>MedicineAgent</h1>
-      <MedicineSearch onSearch={handleSearch} />
-      {loading && <div>Loading...</div>}
-      {error && <div style={{ color: 'red' }}>{error}</div>}
-      {!loading && !error && summary && (
-        <div style={{ marginTop: '20px', whiteSpace: 'pre-line' }}>
-          <h2>Result</h2>
-          <div>{summary}</div>
+    <div className="App">
+      <h1 className="title" >Medicine Agent</h1>
+      <form onSubmit={handleSubmit} className="form">
+        <div className="form-group">
+          <label>Upload Prescription</label>
+          <input
+            type="file"
+            accept="application/pdf"
+            onChange={handleFileChange}
+            className="file-input"
+          />
+        </div>
+        <div className="form-group">
+          <textarea
+            placeholder="Enter your prompt here..."
+            value={prompt}
+            onChange={handlePromptChange}
+            rows={5}
+            className="textarea-input"
+          />
+        </div>
+        <button type="submit" className="submit-button" disabled={loading}>
+          {loading ? 'Loading...' : 'Submit'}
+        </button>
+      </form>
+      {error && <div className="error-message">{error}</div>}
+      {summary && (
+        <div className="result-container">
+          <h2 className="result-title">Result</h2>
+          {summary && (
+        <div className="result-container">
+          <h2 className="result-title">Result</h2>
+          <ReactMarkdown>{summary}</ReactMarkdown>
+        </div>
+      )}
         </div>
       )}
     </div>
