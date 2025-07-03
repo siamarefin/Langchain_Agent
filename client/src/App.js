@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import './App.css';
-import MedicineResults from './components/MedicineResults';
 import MedicineSearch from './components/MedicineSearch';
 
 function App() {
@@ -13,11 +12,15 @@ function App() {
     setError(null);
     setSummary('');
     try {
-      // Use absolute backend URL as requested
-      const response = await fetch('http://localhost:5000/api/medicine-search?q=' + encodeURIComponent(query));
+      // Use Python FastAPI backend endpoint
+      const response = await fetch('http://localhost:8000/chat/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: `Give me detailed information about the medicine: ${query}` })
+      });
       if (!response.ok) throw new Error('Failed to fetch results');
       const data = await response.json();
-      setSummary(data.summary || 'No information found.');
+      setSummary(data.response || 'No information found.');
     } catch (err) {
       setError(err.message || 'An error occurred');
     } finally {
